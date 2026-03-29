@@ -135,10 +135,31 @@ if st.button("Generate AI Insights"):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a business analyst."},
-                {"role": "user", "content": f"Analyze this FMCG demand data and give insights:\n{summary}"}
-            ]
-        )
+                {"role": "user", "content": f"""
+You are a senior FMCG business analyst.
+
+Analyze the following data and give:
+
+1. Trend insight
+2. Risk or concern
+3. Business recommendation
+4. One actionable strategy
+
+Data:
+{summary}
+"""}
 
         st.success("Analysis complete!")
-        st.write(response.choices[0].message.content)
+        st.success("📊 AI Insights Generated")
+
+st.markdown(f"""
+### 📈 Key Insights
+
+{response.choices[0].message.content}
+""")
+
+st.download_button(
+    label="Download Insights",
+    data=response.choices[0].message.content,
+    file_name="ai_insights.txt"
+)
