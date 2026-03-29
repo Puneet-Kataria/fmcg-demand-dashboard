@@ -132,12 +132,13 @@ Volatility: {round(volatility,2)}
 
 if st.button("Generate AI Insights"):
     with st.spinner("Analyzing data with AI..."):
+
         response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {
-            "role": "user",
-            "content": f"""
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""
 You are a senior FMCG business analyst.
 
 Analyze the following data and give:
@@ -150,13 +151,20 @@ Analyze the following data and give:
 Data:
 {summary}
 """
-        }
-    ]
-)
+                }
+            ]
+        )
+
         st.success("Analysis complete!")
         st.success("📊 AI Insights Generated")
-st.download_button(
-    label="Download Insights",
-    data=response.choices[0].message.content,
-    file_name="ai_insights.txt"
-)
+
+        # ✅ Display insights
+        st.markdown("### 📈 Key Insights")
+        st.write(response.choices[0].message.content)
+
+        # ✅ Download button (INSIDE block)
+        st.download_button(
+            label="Download Insights",
+            data=response.choices[0].message.content,
+            file_name="ai_insights.txt"
+        )
