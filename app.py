@@ -153,9 +153,8 @@ Data:
         }
     ]
 )
-st.success("Analysis complete!")
-
-st.success("📊 AI Insights Generated")
+        st.success("Analysis complete!")
+        st.success("📊 AI Insights Generated")
 st.download_button(
     label="Download Insights",
     data=response.choices[0].message.content,
