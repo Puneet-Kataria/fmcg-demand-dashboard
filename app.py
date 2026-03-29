@@ -156,11 +156,11 @@ Data:
         st.success("Analysis complete!")
         st.success("📊 AI Insights Generated")
 
-st.markdown(f"""
-### 📈 Key Insights
+st.success("📊 AI Insights Generated")
 
-{response.choices[0].message.content}
-""")
+st.markdown("### 📈 Key Insights")
+
+st.write(response.choices[0].message.content)
 
 st.download_button(
     label="Download Insights",
