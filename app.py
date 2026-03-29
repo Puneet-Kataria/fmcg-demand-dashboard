@@ -10,7 +10,7 @@ st.set_page_config(layout="wide")
 st.title("📊 FMCG Demand Dashboard")
 
 # Load data
-data = pd.read_csv(r"C:\Users\punee\fmcg_regional_data.csv")
+data = pd.read_csv("fmcg_regional_data.csv")
 
 # Convert date
 data['date'] = pd.to_datetime(data['date']).dt.date
