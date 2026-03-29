@@ -154,7 +154,6 @@ Data:
     ]
 )
         st.success("Analysis complete!")
-        st.success("📊 AI Insights Generated")
 
 st.success("📊 AI Insights Generated")
 
