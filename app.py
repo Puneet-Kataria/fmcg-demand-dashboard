@@ -1,100 +1,90 @@
 from openai import OpenAI
 import os
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-import sys
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from statsmodels.tsa.arima.model import ARIMA
+
+# ------------------ CONFIG ------------------
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.set_page_config(layout="wide")
 st.title("📊 FMCG Demand Dashboard")
 
-# Load data
+# ------------------ LOAD DATA ------------------
 data = pd.read_csv("fmcg_regional_data.csv")
+data['date'] = pd.to_datetime(data['date'])
 
-# Convert date
-data['date'] = pd.to_datetime(data['date']).dt.date
+# ------------------ SIDEBAR ------------------
+st.sidebar.header("Filters")
 
-# Sidebar filters
 region = st.sidebar.selectbox("Select Region", data['Region'].unique())
 category = st.sidebar.selectbox("Select Category", data['Category'].unique())
 
-# Filter data
+# ------------------ FILTER DATA ------------------
 filtered = data[(data['Region'] == region) & (data['Category'] == category)]
 
-# Plot
-fig = px.line(filtered, x='date', y='Demand Index', title=f"{category} in {region}")
+# ------------------ HEADER ------------------
+st.markdown(f"### 📍 {category} in {region}")
 
-st.plotly_chart(fig)
+# ------------------ MAIN TREND ------------------
+st.subheader("📈 Demand Trend")
 
-# Show data
-st.write(filtered.head())
+fig = px.line(filtered, x='date', y='Demand Index')
+st.plotly_chart(fig, use_container_width=True)
 
-# Forecast
-from statsmodels.tsa.arima.model import ARIMA
+# ------------------ KPIs ------------------
+col1, col2 = st.columns(2)
 
-df = filtered.sort_values('date')
+col1.metric("Latest Demand", round(filtered['Demand Index'].iloc[-1], 2))
+col2.metric("Average Demand", round(filtered['Demand Index'].mean(), 2))
+
+st.markdown("---")
+
+# ------------------ FORECAST ------------------
+st.subheader("🔮 Demand Forecast (Next 6 Months)")
+
+df = filtered.sort_values('date').copy()
 df.set_index('date', inplace=True)
 
-model = ARIMA(df['Demand Index'], order=(1,0,1))
+model = ARIMA(df['Demand Index'], order=(1, 0, 1))
 model_fit = model.fit()
 
 forecast = model_fit.forecast(steps=6)
 
-st.subheader("📈 Forecast (Next 6 Months)")
-st.write(forecast)
+# Forecast graph
+fig2 = go.Figure()
 
-#forecast graph
-import plotly.graph_objects as go
-
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(
+fig2.add_trace(go.Scatter(
     x=df.index,
     y=df['Demand Index'],
     name="Actual"
 ))
 
-fig.add_trace(go.Scatter(
+fig2.add_trace(go.Scatter(
     x=forecast.index,
     y=forecast,
     name="Forecast"
 ))
 
-st.plotly_chart(fig)
+st.plotly_chart(fig2, use_container_width=True)
 
-#KPIs
-col1, col2 = st.columns(2)
+# Forecast table
+st.dataframe(forecast)
 
-col1.metric("Latest Demand", round(df['Demand Index'].iloc[-1], 2))
-col2.metric("Avg Demand", round(df['Demand Index'].mean(), 2))
+st.markdown("---")
 
-#Multi-category comparison
-multi_category = st.multiselect("Compare Categories", data['Category'].unique())
-if multi_category:
-    compare_df = data[
-        (data['Region'] == region) &
-        (data['Category'].isin(multi_category))
-    ]
+# ------------------ INSIGHTS ------------------
+st.subheader("📊 Key Insights (Selected Category)")
 
-    fig2 = px.line(compare_df, x='date', y='Demand Index', color='Category',
-                   title="Category Comparison")
-
-    st.plotly_chart(fig2)
- 
-# insights
-recent = filtered['Demand Index'].tail(6)
-previous = filtered['Demand Index'].iloc[-12:-6]
+recent = df['Demand Index'].tail(6)
+previous = df['Demand Index'].iloc[-12:-6]
 
 recent_avg = recent.mean()
 previous_avg = previous.mean()
 
-if previous_avg != 0:
-    change = ((recent_avg - previous_avg) / previous_avg) * 100
-else:
-    change = 0
-
-st.subheader("📊 Insights")
+change = ((recent_avg - previous_avg) / previous_avg * 100) if previous_avg != 0 else 0
 
 # Trend insight
 if change > 5:
@@ -105,22 +95,22 @@ else:
     st.info("Demand is stable ⚖️")
 
 # Volatility insight
-volatility = filtered['Demand Index'].std()
+volatility = df['Demand Index'].std()
 
 if volatility > 10:
     st.warning("Demand is highly volatile ⚠️")
 else:
     st.success("Demand is relatively stable ✅")
 
-# Peak month insight
-peak = filtered.loc[filtered['Demand Index'].idxmax()]
-
-st.write(f"📅 Peak demand observed in {peak['date'].strftime('%b %Y')} with value {round(peak['Demand Index'],2)}")
+# Peak demand
+peak = df.loc[df['Demand Index'].idxmax()]
+st.write(f"📅 Peak demand observed in {peak.name.strftime('%b %Y')} with value {round(peak['Demand Index'],2)}")
 
 st.markdown("---")
-st.subheader("🤖 AI Insights")
 
-# Prepare summary data
+# ------------------ AI INSIGHTS ------------------
+st.subheader("🤖 AI Insights (Advanced Analysis)")
+
 summary = f"""
 Category: {category}
 Region: {region}
@@ -141,12 +131,12 @@ if st.button("Generate AI Insights"):
                     "content": f"""
 You are a senior FMCG business analyst.
 
-Analyze the following data and give:
+Analyze the following data and provide:
 
-1. Trend insight
-2. Risk or concern
-3. Business recommendation
-4. One actionable strategy
+1. Trend insight  
+2. Risk or concern  
+3. Business recommendation  
+4. One actionable strategy  
 
 Data:
 {summary}
@@ -155,16 +145,45 @@ Data:
             ]
         )
 
+        result = response.choices[0].message.content
+
         st.success("Analysis complete!")
-        st.success("📊 AI Insights Generated")
-
-        # ✅ Display insights
         st.markdown("### 📈 Key Insights")
-        st.write(response.choices[0].message.content)
+        st.write(result)
 
-        # ✅ Download button (INSIDE block)
         st.download_button(
-            label="Download Insights",
-            data=response.choices[0].message.content,
+            label="📥 Download Insights",
+            data=result,
             file_name="ai_insights.txt"
         )
+
+st.markdown("---")
+
+# ------------------ COMPARISON ------------------
+st.subheader("📊 Multi-Category Comparison (Optional)")
+
+multi_category = st.multiselect(
+    "Select categories to compare",
+    data['Category'].unique()
+)
+
+if multi_category:
+    compare_df = data[
+        (data['Region'] == region) &
+        (data['Category'].isin(multi_category))
+    ]
+
+    fig3 = px.line(
+        compare_df,
+        x='date',
+        y='Demand Index',
+        color='Category'
+    )
+
+    st.plotly_chart(fig3, use_container_width=True)
+
+st.markdown("---")
+
+# ------------------ RAW DATA ------------------
+with st.expander("📁 View Raw Data"):
+    st.dataframe(filtered)
