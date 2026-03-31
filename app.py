@@ -117,10 +117,12 @@ try:
         enforce_invertibility=False
     )
     model_full_fit = model_full.fit(disp=False)
-    forecast = model_full_fit.forecast(steps=6)
+    forecast = model_full_fit.forecast(steps=6).clip(lower=0)
 
     # Show model accuracy badge
     st.caption(f"🤖 Model: SARIMA(1,1,1)(1,1,0,12) &nbsp;|&nbsp; Forecast MAPE (6-month holdout): **{mape_str}**")
+    st.info("ℹ️ High MAPE is expected for search trend data due to irregular spikes. "
+        "SARIMA captures seasonality but cannot predict viral or event-driven demand surges.")
 
     # Forecast chart
     fig2 = go.Figure()
