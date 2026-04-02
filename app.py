@@ -156,7 +156,7 @@ try:
         'Predicted Demand Index': forecast.values.round(2)
     })
     st.dataframe(forecast_df, use_container_width=True, hide_index=True)
-# Forecast interpretation
+    # Forecast interpretation
 forecast_direction = forecast.iloc[-1] - forecast.iloc[0]
 forecast_avg = forecast.mean()
 current_avg = df_model['Demand Index'].tail(6).mean()
