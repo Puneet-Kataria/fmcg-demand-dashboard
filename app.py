@@ -170,6 +170,14 @@ try:
     else:
         trend_emoji = "➡️"
         trend_text = "stable"
+    # Fix 1 — Override stable if forecast vs current change is large
+    if trend_text == "stable" and abs(forecast_change) > 20:
+        if forecast_change < 0:
+            trend_emoji = "📉"
+            trend_text = "declining"
+        else:
+            trend_emoji = "📈"
+            trend_text = "rising"
     st.info(
          f"{trend_emoji} **Forecast Summary:** Demand for **{category}** in **{region}** "
          f"is expected to be **{trend_text}** over the next 6 months. "
@@ -177,6 +185,15 @@ try:
          f"current 6-month average of **{round(current_avg, 2)}** "
          f"({'▲' if forecast_change > 0 else '▼'} {abs(round(forecast_change, 1))}% change)."
      )
+     # Fix 2 — Data quality warning for zero-heavy categories
+    zero_pct = (df_model['Demand Index'] == 0).mean() * 100
+    if zero_pct > 30:
+        st.warning(
+            f"⚠️ Data Quality Notice: {round(zero_pct, 1)}% of historical values "
+            f"for **{category}** in **{region}** are zero. This is likely due to low "      
+            f"search volume relative to other categories. Forecast and interpretation "
+            f"should be treated with caution."
+        )
 
 except Exception as e:
     st.warning(f"Forecasting failed for this combination: {e}")
