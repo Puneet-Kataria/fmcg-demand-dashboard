@@ -170,7 +170,7 @@ try:
     else:
         trend_emoji = "➡️"
         trend_text = "stable"
-     st.info(
+    st.info(
          f"{trend_emoji} **Forecast Summary:** Demand for **{category}** in **{region}** "
          f"is expected to be **{trend_text}** over the next 6 months. "
          f"Forecasted average demand index: **{round(forecast_avg, 2)}** vs "
