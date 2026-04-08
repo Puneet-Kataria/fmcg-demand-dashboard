@@ -8,7 +8,19 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_percentage_error
 import warnings
 warnings.filterwarnings("ignore")
+import threading
+import requests
+import time
 
+def keep_alive():
+    while True:
+        time.sleep(300)  # ping every 5 minutes
+        try:
+            requests.get("https://fmcg-dashboard-puneet.streamlit.app/")
+        except:
+            pass
+
+threading.Thread(target=keep_alive, daemon=True).start()
 # ------------------ CONFIG ------------------
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
