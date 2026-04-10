@@ -175,7 +175,7 @@ try:
     threshold = df_model['Demand Index'].std() * 0.10
     # PRIMARY: Use forecast_change vs current as the main signal
         # SECONDARY: Use forecast_direction as tiebreaker only when change is small
-        if abs(forecast_change) > 10:
+    if abs(forecast_change) > 10:
             # Large change vs current — use this as primary signal
             if forecast_change > 0:
                 trend_emoji = "📈"
