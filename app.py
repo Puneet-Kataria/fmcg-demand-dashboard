@@ -172,33 +172,20 @@ try:
 
     # Forecast interpretation
     forecast_direction = forecast.iloc[-1] - forecast.iloc[0]
+   # Forecast interpretation — based on forecast vs current average
     forecast_avg = forecast.mean()
     current_avg = df_model['Demand Index'].tail(6).mean()
     forecast_change = ((forecast_avg - current_avg) / current_avg * 100) if current_avg != 0 else 0
-    threshold = df_model['Demand Index'].std() * 0.10
 
-    # PRIMARY: Use forecast_change vs current as the main signal
-    # SECONDARY: Use forecast_direction as tiebreaker only when change is small
-    if abs(forecast_change) > 10:
-        # Large change vs current - use this as primary signal
-        if forecast_change > 0:
-            trend_emoji = "📈"
-            trend_text = "rising"
-        else:
-            trend_emoji = "📉"
-            trend_text = "declining"
+    if forecast_change > 5:
+        trend_emoji = "📈"
+        trend_text = "rising"
+    elif forecast_change < -5:
+        trend_emoji = "📉"
+        trend_text = "declining"
     else:
-        # Small change vs current - use direction within forecast period
-        if forecast_direction > threshold:
-            trend_emoji = "📈"
-            trend_text = "rising"
-        elif forecast_direction < -threshold:
-            trend_emoji = "📉"
-            trend_text = "declining"
-        else:
-            trend_emoji = "➡️"
-            trend_text = "stable"
-
+        trend_emoji = "➡️"
+        trend_text = "stable"
     st.info(
         f"{trend_emoji} **Forecast Summary:** Demand for **{category}** in **{region}** "
         f"is expected to be **{trend_text}** over the next 6 months. "
