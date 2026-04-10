@@ -21,6 +21,7 @@ def keep_alive():
             pass
 
 threading.Thread(target=keep_alive, daemon=True).start()
+
 # ------------------ CONFIG ------------------
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -134,7 +135,7 @@ try:
     # Show model accuracy badge
     st.caption(f"🤖 Model: SARIMA(1,1,1)(1,1,0,12) &nbsp;|&nbsp; Forecast MAPE (6-month holdout): **{mape_str}**")
     st.info("ℹ️ High MAPE is expected for search trend data due to irregular spikes. "
-        "SARIMA captures seasonality but cannot predict viral or event-driven demand surges.")
+            "SARIMA captures seasonality but cannot predict viral or event-driven demand surges.")
 
     # Forecast chart
     fig2 = go.Figure()
@@ -162,56 +163,59 @@ try:
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    # Forecast table — formatted dates
+    # Forecast table - formatted dates
     forecast_df = pd.DataFrame({
         'Month': forecast.index.strftime('%b %Y'),
         'Predicted Demand Index': forecast.values.round(2)
     })
     st.dataframe(forecast_df, use_container_width=True, hide_index=True)
+
+    # Forecast interpretation
     forecast_direction = forecast.iloc[-1] - forecast.iloc[0]
     forecast_avg = forecast.mean()
     current_avg = df_model['Demand Index'].tail(6).mean()
     forecast_change = ((forecast_avg - current_avg) / current_avg * 100) if current_avg != 0 else 0
     threshold = df_model['Demand Index'].std() * 0.10
+
     # PRIMARY: Use forecast_change vs current as the main signal
-        # SECONDARY: Use forecast_direction as tiebreaker only when change is small
+    # SECONDARY: Use forecast_direction as tiebreaker only when change is small
     if abs(forecast_change) > 10:
-            # Large change vs current — use this as primary signal
-            if forecast_change > 0:
-                trend_emoji = "📈"
-                trend_text = "rising"
-            else:
-                trend_emoji = "📉"
-                trend_text = "declining"
+        # Large change vs current - use this as primary signal
+        if forecast_change > 0:
+            trend_emoji = "📈"
+            trend_text = "rising"
         else:
-            # Small change vs current — use direction within forecast period
-            if forecast_direction > threshold:
-                trend_emoji = "📈"
-                trend_text = "rising"
-            elif forecast_direction < -threshold:
-                trend_emoji = "📉"
-                trend_text = "declining"
-            else:
-                trend_emoji = "➡️"
-                trend_text = "stable"
+            trend_emoji = "📉"
+            trend_text = "declining"
+    else:
+        # Small change vs current - use direction within forecast period
+        if forecast_direction > threshold:
+            trend_emoji = "📈"
+            trend_text = "rising"
+        elif forecast_direction < -threshold:
+            trend_emoji = "📉"
+            trend_text = "declining"
+        else:
+            trend_emoji = "➡️"
+            trend_text = "stable"
 
-        st.info(
-            f"{trend_emoji} **Forecast Summary:** Demand for **{category}** in **{region}** "
-            f"is expected to be **{trend_text}** over the next 6 months. "
-            f"Forecasted average demand index: **{round(forecast_avg, 2)}** vs "
-            f"current 6-month average of **{round(current_avg, 2)}** "
-            f"({'▲' if forecast_change > 0 else '▼'} {abs(round(forecast_change, 1))}% change)."
+    st.info(
+        f"{trend_emoji} **Forecast Summary:** Demand for **{category}** in **{region}** "
+        f"is expected to be **{trend_text}** over the next 6 months. "
+        f"Forecasted average demand index: **{round(forecast_avg, 2)}** vs "
+        f"current 6-month average of **{round(current_avg, 2)}** "
+        f"({'▲' if forecast_change > 0 else '▼'} {abs(round(forecast_change, 1))}% change)."
+    )
+
+    # Data quality warning for zero-heavy categories
+    zero_pct = (df_model['Demand Index'] == 0).mean() * 100
+    if zero_pct > 30:
+        st.warning(
+            f"⚠️ Data Quality Notice: {round(zero_pct, 1)}% of historical values "
+            f"for **{category}** in **{region}** are zero. This is likely due to low "
+            f"search volume relative to other categories. Forecast and interpretation "
+            f"should be treated with caution."
         )
-
-        # Fix 2 — Data quality warning for zero-heavy categories
-        zero_pct = (df_model['Demand Index'] == 0).mean() * 100
-        if zero_pct > 30:
-            st.warning(
-                f"⚠️ Data Quality Notice: {round(zero_pct, 1)}% of historical values "
-                f"for **{category}** in **{region}** are zero. This is likely due to low "
-                f"search volume relative to other categories. Forecast and interpretation "
-                f"should be treated with caution."
-            )
 
 except Exception as e:
     st.warning(f"Forecasting failed for this combination: {e}")
@@ -230,7 +234,7 @@ previous_avg = previous.mean()
 change = ((recent_avg - previous_avg) / previous_avg * 100) if previous_avg != 0 else 0
 volatility = df_model['Demand Index'].std()
 
-# FIX: Trend and volatility use SAME metric — avoid contradicting signals
+# FIX: Trend and volatility use SAME metric - avoid contradicting signals
 # Show trend
 if change > 5:
     st.success(f"📈 Demand increased by {round(change, 2)}% in the last 6 months vs previous 6 months.")
@@ -327,7 +331,7 @@ if multi_category:
         (data['Category'].isin(multi_category))
     ]
 
-    # Distinct color palette — avoid same-shade blues
+    # Distinct color palette - avoid same-shade blues
     color_palette = ['#00b4d8', '#f77f00', '#06d6a0', '#e63946', '#9b5de5']
     color_map = {cat: color_palette[i % len(color_palette)] for i, cat in enumerate(multi_category)}
 
